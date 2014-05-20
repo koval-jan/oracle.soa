@@ -1,0 +1,16 @@
+target
+bin
+xtend-gen
+# Locally stored "Eclipse launch configurations"
+.launch
+.pmd
+.metadata
+.sonar
+/Servers[0-9]*
+#[0-9]* doesn't work for some people, reason is not yet clear
+Servers
+/RemoteSystemsTempFiles
+**/.project
+**/.classpath
+**/.settings/
+**/target/*.*
