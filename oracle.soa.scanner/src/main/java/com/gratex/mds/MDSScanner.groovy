@@ -5,61 +5,33 @@ import groovy.io.FileType
 import java.util.Formatter.DateTime
 
 import com.couggi.javagraphviz.Digraph
+import com.couggi.javagraphviz.Node
 import com.couggi.javagraphviz.Edge
 import com.couggi.javagraphviz.Graph;
 import com.couggi.javagraphviz.GraphvizEngine
 import com.gratex.mds.exception.ProjectFileException
-import com.gratex.mds.file.BaseFile
+import com.gratex.mds.file.BaseFile;
 import com.orientechnologies.orient.core.serialization.serializer.object.OObjectSerializer
 import com.orientechnologies.orient.object.serialization.OObjectSerializerContext
 import com.orientechnologies.orient.object.serialization.OObjectSerializerHelper
+import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
+import com.tinkerpop.blueprints.util.ElementHelper;
+import com.tinkerpop.blueprints.util.GraphHelper;
 
 class MDSScanner {
 
 	public static final String MDSPrefix = "file:///c:/Workspaces/MVSR/EGOV/MDSIP/MVSR.EGOV.MDSIP-Trunk/MVSR/EGOV/MDSIP/BPEL/osoa/MDS.SLN/ALL.MDS"
 
+	def static Vertex goc(Vertex v, com.tinkerpop.blueprints.Graph  g){
+		def nv=g.getVertex(v.id)
+		if(nv==null){
+			nv=g.addVertex(v.id, ElementHelper.getProperties(v))
+		}
+		nv
+	}
+
 	static main(args) {
-
-
-
-		//URI u = new URI("http://www.gratex.com/../test.xsd");
-		//URI u = new URI("../test.xsd");
-		//print u.absolute
-
-//		Path p = Paths.get(new URI("file:///c:/Workspaces/MVSR/EGOV/UPVSIP/MVSR.EGOV.UPVSIP-Trunk/MVSR/EGOV/UPVSIP/BPEL/osoa/UPVS.SLN/UPVS.MVMEP/G2GWrapper.wsdl"))
-//		Path p2 = p.resolveSibling("xsd/UhradaNaPodanie-v1.xsd")
-//
-//		println p2
-//		println p2.toFile().exists()
-		//OObjectSerializer<LOCAL_TYPE, DB_TYPE>
-
-		//DotBuilder d = new DotBuilder()
-		Graph graph = new Digraph("G");
-		graph.attr("rankdir").value("LR");
-		graph.node().attr("shape").value("record");
-		// create nodes with names
-		Node hello = graph.addNode("Hello");
-		hello.attr("fixedsize").value("true");
-		hello.attr("width").value("0.8");
-		hello.attr("height").value("0.6");
-		hello.attr("label").value("");
-		Edge label = graph.addEdge(hello, hello);
-		label.attr("taillabel").value("Mp1x123");
-		label.attr("fontsize").value("7");
-		label.attr("arrowtail").value("none");
-		label.attr("arrowhead").value("none");
-		label.attr("labeldistance").value("1.0");
-		label.attr("labelangle").value("-60.0");
-		// create a edge with hello node and world node.
-		// create the Graphviz engine to the graph
-		GraphvizEngine engine = new GraphvizEngine(graph);
-		// define the type of the output
-		engine.type("png");
-		// define the file name of the output.
-		engine.toFilePath("helloworld.png");
-		// generate output.
-		engine.output();
-
 
 		def RuntimeModuleCatalog c
 		try {
@@ -88,7 +60,26 @@ class MDSScanner {
 			c.gModules.saveGraphML('c:/testModuleRefs.graphml')
 			c.gModules.saveGML('c:/testModuleRefs.gml')
 
-			//c.gModules.
+			def sgArr = [:]
+			def sg
+			def t = this
+
+			c.gModules.V.sideEffect {
+				sg = new TinkerGraph()
+				sgArr[it.getProperty('projectName')] = sg
+			}.bothE("REFERENCES").sideEffect {
+				if(!sg.getEdge(it.id))
+					sg.addEdge(it.id, t.goc(it.outV.next(), sg), t.goc(it.inV.next(), sg), it.label, ElementHelper.getProperties(it))
+			}.iterate()
+
+			sgArr.each { k,v ->
+				if(v.vertices.isEmpty())
+					return
+				def gw = new GraphvizWriter(v)
+				gw.outputGraph("c:/dep_${k}.png")
+				v.saveGraphML("c:/dep_${k}.graphml")
+			}
+
 			c.gModules.commit()
 		} catch (e) {
 			println e
@@ -97,9 +88,6 @@ class MDSScanner {
 		} finally {
 			c?.server?.shutdown()
 		}
-
-		//WSDLReader w = new WSDLReader();
-		//w.read(FileSystems.getDefault().getPath("/WorkspacesGitlab/oracle.soa/oracle.soa.scanner/G2GWrapper.wsdl"))
 
 //		def OServer server
 //		def OrientGraph g
