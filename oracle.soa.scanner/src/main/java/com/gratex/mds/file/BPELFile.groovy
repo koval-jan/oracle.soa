@@ -41,8 +41,7 @@ public class BPELFile extends BaseFile {
 				def location = xPath.evaluate( '@location', it )
 				def bf = BaseFile.create(filePath, location)
 				if(bf) {
-					//c.addEdge(self, bf.self)
-					c.addProjectEdge(prjSelf, bf.prjSelf)
+					prjCtlg.addProjectEdge(self, bf.self)
 					bf.parseDependencies()
 					println "bpel import $location"
 				}
@@ -53,8 +52,7 @@ public class BPELFile extends BaseFile {
 				def location = xPath.evaluate( '@location', it )
 				def bf = BaseFile.create(filePath, location)
 				if(bf) {
-					//c.addEdge(self, bf.self)
-					c.addProjectEdge(prjSelf, bf.prjSelf)
+					prjCtlg.addProjectEdge(self, bf.self)
 					bf.parseDependencies()
 					println "bpel import $location"
 				}

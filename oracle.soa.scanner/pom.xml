@@ -4,51 +4,67 @@
 
 	<parent>
 		<groupId>com.gratex.maven</groupId>
-		<artifactId>master-parent-java17</artifactId>
-		<version>1.0.16</version>
+		<artifactId>master-parent-groovy</artifactId>
+		<version>1.0.5</version>
 	</parent>
 
 	<groupId>com.gratex</groupId>
 	<artifactId>oracle.soa.scanner</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 
+	<properties>
+		<orientdb-version>1.7.8</orientdb-version>
+		<com.tinkerpop-version>2.6.0</com.tinkerpop-version>
+	</properties>
+
 	<dependencies>
+		<dependency>
+			<groupId>org.codehaus.groovy</groupId>
+			<artifactId>groovy-all</artifactId>
+			<version>2.3.6</version>
+		</dependency>
 		<dependency>
 			<groupId>com.orientechnologies</groupId>
 			<artifactId>orientdb-graphdb</artifactId>
-			<version>1.7-rc2</version>
+			<version>${orientdb-version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.orientechnologies</groupId>
 			<artifactId>orientdb-server</artifactId>
-			<version>1.7-rc2</version>
+			<version>${orientdb-version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.orientechnologies</groupId>
 			<artifactId>orientdb-enterprise</artifactId>
-			<version>1.7-rc2</version>
+			<version>${orientdb-version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.tinkerpop.blueprints</groupId>
 			<artifactId>blueprints-core</artifactId>
-			<version>2.5.0</version>
+			<version>${com.tinkerpop-version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>com.tinkerpop.gremlin</groupId>
 			<artifactId>gremlin-groovy</artifactId>
-			<version>2.5.0</version>
+			<version>${com.tinkerpop-version}</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>groovy</artifactId>
+					<groupId>org.codehaus.groovy</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>com.tinkerpop.gremlin</groupId>
 			<artifactId>gremlin-java</artifactId>
-			<version>2.5.0</version>
+			<version>${com.tinkerpop-version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>com.tinkerpop</groupId>
 			<artifactId>pipes</artifactId>
-			<version>2.5.0</version>
+			<version>${com.tinkerpop-version}</version>
 		</dependency>
 
 		<dependency>
@@ -61,6 +77,25 @@
 			<groupId>java-graphviz</groupId>
 			<artifactId>java-graphviz</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-aspects</artifactId>
+			<version>3.2.7.RELEASE</version>
+			<scope>none</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.aspectj</groupId>
+			<artifactId>aspectjrt</artifactId>
+			<version>1.7.3</version>
+			<scope>none</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.aspectj</groupId>
+			<artifactId>aspectjtools</artifactId>
+			<version>1.7.3z</version>
+			<scope>none</scope>
 		</dependency>
 
 	</dependencies>

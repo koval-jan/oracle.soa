@@ -1,41 +1,29 @@
 package com.gratex.mds
 
 import groovy.io.FileType
+import groovyx.gpars.activeobject.ActiveObjectRegistry
+import groovyx.gpars.group.DefaultPGroup
 
-import java.util.Formatter.DateTime
-
-import com.couggi.javagraphviz.Digraph
-import com.couggi.javagraphviz.Node
-import com.couggi.javagraphviz.Edge
-import com.couggi.javagraphviz.Graph;
-import com.couggi.javagraphviz.GraphvizEngine
+import com.gratex.mds.catalog.CompiletimeCatalog
+import com.gratex.mds.catalog.RuntimeCatalog
 import com.gratex.mds.exception.ProjectFileException
-import com.gratex.mds.file.BaseFile;
-import com.orientechnologies.orient.core.serialization.serializer.object.OObjectSerializer
-import com.orientechnologies.orient.object.serialization.OObjectSerializerContext
-import com.orientechnologies.orient.object.serialization.OObjectSerializerHelper
-import com.tinkerpop.blueprints.Vertex;
-import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
-import com.tinkerpop.blueprints.util.ElementHelper;
-import com.tinkerpop.blueprints.util.GraphHelper;
+import com.gratex.mds.file.BaseFile
 
 class MDSScanner {
 
-	public static final String MDSPrefix = "file:///c:/Workspaces/MVSR/EGOV/MDSIP/MVSR.EGOV.MDSIP-Trunk/MVSR/EGOV/MDSIP/BPEL/osoa/MDS.SLN/ALL.MDS"
-
-	def static Vertex goc(Vertex v, com.tinkerpop.blueprints.Graph  g){
-		def nv=g.getVertex(v.id)
-		if(nv==null){
-			nv=g.addVertex(v.id, ElementHelper.getProperties(v))
-		}
-		nv
-	}
-
 	static main(args) {
 
-		def RuntimeModuleCatalog c
+		def svcActorPG = new DefaultPGroup(1)  //1 daemon thread pool
+		ActiveObjectRegistry.instance.register("svcActorGroup", svcActorPG)
+		def prjActorPG = new DefaultPGroup(1)  //1 daemon thread pool
+		ActiveObjectRegistry.instance.register("prjActorGroup", prjActorPG)
+		
+		
+		def RuntimeCatalog runtimeCtl
+		def CompiletimeCatalog compiletimeCtl
 		try {
-			c = RuntimeModuleCatalog.getInstance()
+			runtimeCtl = RuntimeCatalog.instance
+			compiletimeCtl = CompiletimeCatalog.instance
 
 			new File("c:/Workspaces/MVSR/EGOV").eachFileRecurse(FileType.FILES) {
 				if( it.name  ==~ ".*composite.xml") {
@@ -48,45 +36,60 @@ class MDSScanner {
 				}
 			}
 
-			c.gModules.getVertices().each {
-				c.addReferenceEdges(it)
-			}
-			//c.g.commit()
-			//c.g.saveGraphML('c:/test.graphml')
+			runtimeCtl.postprocessReferences()
+			
+			compiletimeCtl.saveGraphML('c:/compileTimeDependencies.graphml')
+			//compiletimeCtl.saveGraphwiz('c:/compileTimeDependencies.png')
+			
 
-//			c.gModules.saveGraphML('c:/testModule.graphml')
-//			c.gModules.commit()
+			runtimeCtl.saveGraphML('c:/runtimeDependencies.graphml')
+			runtimeCtl.saveGML('c:/runtimeDependencies.gml')
 
-			c.gModules.saveGraphML('c:/testModuleRefs.graphml')
-			c.gModules.saveGML('c:/testModuleRefs.gml')
-
-			def sgArr = [:]
-			def sg
-			def t = this
-
-			c.gModules.V.sideEffect {
-				sg = new TinkerGraph()
-				sgArr[it.getProperty('projectName')] = sg
-			}.bothE("REFERENCES").sideEffect {
-				if(!sg.getEdge(it.id))
-					sg.addEdge(it.id, t.goc(it.outV.next(), sg), t.goc(it.inV.next(), sg), it.label, ElementHelper.getProperties(it))
-			}.iterate()
-
+			def sgArr = runtimeCtl.getNeigbourSubGraphs() 
 			sgArr.each { k,v ->
 				if(v.vertices.isEmpty())
 					return
 				def gw = new GraphvizWriter(v)
-				gw.outputGraph("c:/dep_${k}.png")
-				v.saveGraphML("c:/dep_${k}.graphml")
+				gw.outputGraph("c:/runtime_${k}.png")
+				v.saveGraphML("c:/runtime_${k}.graphml")
 			}
-
-			c.gModules.commit()
+			
+			
+			sgArr = compiletimeCtl.getNeigbourSubGraphs()
+			sgArr.each { k,v ->
+				if(v.vertices.isEmpty())
+					return
+				def gw = new GraphvizWriter(v)
+				gw.outputGraph("c:/compiletime_${k}.png")
+				v.saveGraphML("c:/compiletime_${k}.graphml")
+			}
+			
+			println "*******"
+			//def prfj="GTI.MINIPAY"
+			//def prfj="UPVS.MVMEP"
+			//def prfj="CO.ZEP.UI"
+			def prfj="CO.SYN.MINIK"
+			def set = runtimeCtl.subTree(prfj)
+			println set
+			Set all = new LinkedHashSet()
+			set.each{
+				all.add(it)
+				all.addAll(compiletimeCtl.subTree(it))
+			}
+			println all
+			
+//			println runtimeCtl.subTree("UPVS.MVG2G")
+//			println runtimeCtl.subTree("CO.SYN.MINIK")
+//			println runtimeCtl.subTree("UPVS.MVMEP")
+			
+			runtimeCtl.commit()
 		} catch (e) {
 			println e
-			//c?.g?.rollback()
-			c?.gModules?.rollback()
+			runtimeCtl?.rollback()
+			compiletimeCtl?.rollback()
 		} finally {
-			c?.server?.shutdown()
+			runtimeCtl?.shutdown()
+			compiletimeCtl?.shutdown()
 		}
 
 //		def OServer server

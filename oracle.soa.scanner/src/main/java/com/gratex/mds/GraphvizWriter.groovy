@@ -26,7 +26,6 @@ class GraphvizWriter {
 	}
 
 	def goc(v) {
-
 	}
 
 	public void outputGraph(final String filename) throws IOException {
@@ -51,14 +50,16 @@ class GraphvizWriter {
 			ge.attr("labeldistance").value("7")
 		}
 
-		GraphvizEngine engine = new GraphvizEngine(g);
-
-
-		// define the type of the output
-		//engine.addType("svg");
-		// define the file name of the output.
-		engine.toFilePath(filename);
-		// generate output.
-		engine.output();
+		try {
+			GraphvizEngine engine = new GraphvizEngine(g);
+			// define the type of the output
+			//engine.addType("svg");
+			// define the file name of the output.
+			engine.toFilePath(filename);
+			// generate output.
+			engine.output();
+		} catch (e) {
+			throw e
+		}
 	}
 }

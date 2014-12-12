@@ -8,8 +8,6 @@ import javax.xml.xpath.XPath
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory
 
-import com.gratex.mds.Catalog;
-
 class WSDLReader {
 
 	def read(Path wsdlPath){
@@ -31,9 +29,6 @@ class WSDLReader {
 			def nodes = xPath.evaluate( '//wsdl:import', wsdl, XPathConstants.NODESET )
 			nodes.each{
 				def location = xPath.evaluate( '@location', it )
-
-				//Catalog.instance.addFile
-
 				println location
 			}
 

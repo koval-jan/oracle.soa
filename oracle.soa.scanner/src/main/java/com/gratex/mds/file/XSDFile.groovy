@@ -39,8 +39,7 @@ public class XSDFile extends BaseFile {
 				def location = xPath.evaluate( '@schemaLocation', it )
 				def bf = BaseFile.create(filePath, location)
 				if(bf) {
-					//c.addEdge(self, bf.self)
-					c.addProjectEdge(prjSelf, bf.prjSelf)
+					prjCtlg.addProjectEdge(self, bf.self)
 					bf.parseDependencies()
 					println "xsd import $location"
 				}
@@ -51,8 +50,7 @@ public class XSDFile extends BaseFile {
 				def location = xPath.evaluate( '@schemaLocation', it )
 				def bf = BaseFile.create(filePath, location)
 				if(bf) {
-					//c.addEdge(self, bf.self)
-					c.addProjectEdge(prjSelf, bf.prjSelf)
+					prjCtlg.addProjectEdge(self, bf.self)
 					bf.parseDependencies()
 					println "xsd include $location"
 				}

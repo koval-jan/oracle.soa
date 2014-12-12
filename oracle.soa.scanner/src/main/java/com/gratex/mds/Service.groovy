@@ -17,4 +17,13 @@ class Service extends OSerializable {
 	public String toString() {
 		return "${name}";
 	}
+	
+	def key() {
+		def m = port =~ /(.*)(#wsdl\.endpoint\().*\/.*(\))/;
+		if(m.matches()) {
+			"${iface}_${m[0][1]}${m[0][2]}${m[0][3]}".toString()
+		} else {
+			"${iface}_${port}".toString()
+		}
+	}
 }

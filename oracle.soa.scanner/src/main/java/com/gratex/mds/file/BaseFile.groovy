@@ -1,23 +1,20 @@
 package com.gratex.mds.file;
 
-import groovy.io.FileType;
-import groovy.transform.EqualsAndHashCode;
+import groovy.io.FileType
+import groovy.transform.EqualsAndHashCode
 
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.PublicKey;
+import java.nio.file.Path
+import java.nio.file.Paths
 
-import com.gratex.mds.AllMds;
-import com.gratex.mds.Catalog;
-import com.gratex.mds.MDSScanner;
-import com.gratex.mds.RuntimeModuleCatalog;
-import com.gratex.mds.exception.CreationException;
+import com.gratex.mds.AllMds
+import com.gratex.mds.AllMds.MdsInfo;
+import com.gratex.mds.catalog.CompiletimeCatalog
+import com.gratex.mds.catalog.RuntimeCatalog
+import com.gratex.mds.exception.CreationException
 import com.gratex.mds.exception.ProjectFileException
-import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.Vertex
 
-@EqualsAndHashCode(excludes=["self", "prjSelf", "c"])
+@EqualsAndHashCode(excludes=["self", "prjCtlg", "svcCtlg" ])
 public abstract class BaseFile implements Serializable {
 
 	String projectName
@@ -26,10 +23,9 @@ public abstract class BaseFile implements Serializable {
 	Path relPath
 	URI fileURI
 	Vertex self
-	Vertex prjSelf
 
-	//transient Catalog c = Catalog.getInstance()
-	transient RuntimeModuleCatalog c = RuntimeModuleCatalog.getInstance()
+	transient CompiletimeCatalog prjCtlg = CompiletimeCatalog.instance
+	transient RuntimeCatalog svcCtlg = RuntimeCatalog.instance
 
 	public BaseFile(String file) {
 		this(new URI(file))
@@ -41,18 +37,16 @@ public abstract class BaseFile implements Serializable {
 		fileURI = fURI
 		if(fileURI.scheme == "oramds") {
 			def file = fileURI.toString()
-			projectName = AllMds.getInstance().resolveProjectName(fileURI)
-			if(!projectName)
+			def info = AllMds.getInstance().resolveInfo(fileURI)
+			if(!info)
 				throw new CreationException("Project not found $fileURI")
 
-			fileURI = new URI(file.replaceFirst("oramds:", MDSScanner.MDSPrefix))
-			filePath = Paths.get(fileURI)
-
-
-			Path projectDirPath = Paths.get(new URI(MDSScanner.MDSPrefix + "/" + projectName))
+			fileURI = info.actualURI
+			filePath = info.actualPath
+			projectName = info.mdsInfo.logicalName
+			Path projectDirPath = info.mdsInfo.dir 
 			relPath = projectDirPath.relativize(filePath)
 			projectFile = projectDirPath.toFile()
-			projectName = projectName.replaceAll("/", ".")
 
 		} else {
 			filePath = Paths.get(fileURI)
@@ -70,8 +64,7 @@ public abstract class BaseFile implements Serializable {
 			projectName = matcher[0][1]
 		}
 
-		//self = c.addVertex(this)
-		//prjSelf = c.addProjectVertex(this)
+		self = prjCtlg.addProjectVertex(this)
 	}
 
 	public abstract void parseDependencies()

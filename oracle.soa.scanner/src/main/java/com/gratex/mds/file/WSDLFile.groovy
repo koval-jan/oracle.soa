@@ -37,8 +37,7 @@ public class WSDLFile extends BaseFile {
 				def location = xPath.evaluate( '@location', it )
 				def bf = BaseFile.create(filePath, location)
 				if(bf) {
-					//c.addEdge(self, bf.self)
-					c.addProjectEdge(prjSelf, bf.prjSelf)
+					prjCtlg.addProjectEdge(self, bf.self)
 					bf.parseDependencies()
 					println "wsdl import $location"
 				}
@@ -52,8 +51,7 @@ public class WSDLFile extends BaseFile {
 				def location = xPath.evaluate( '@schemaLocation', it )
 				def bf = BaseFile.create(filePath, location)
 				if(bf) {
-					//c.addEdge(self, bf.self)
-					c.addProjectEdge(prjSelf, bf.prjSelf)
+					prjCtlg.addProjectEdge(self, bf.self)
 					bf.parseDependencies()
 					println "wsdl import $location"
 				}
@@ -64,8 +62,7 @@ public class WSDLFile extends BaseFile {
 				def location = xPath.evaluate( '@schemaLocation', it )
 				def bf = BaseFile.create(filePath, location)
 				if(bf) {
-					//c.addEdge(self, bf.self)
-					c.addProjectEdge(prjSelf, bf.prjSelf)
+					prjCtlg.addProjectEdge(self, bf.self)
 					bf.parseDependencies()
 					println "xsd include $location"
 				}

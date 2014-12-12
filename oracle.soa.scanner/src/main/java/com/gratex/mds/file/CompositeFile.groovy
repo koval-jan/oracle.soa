@@ -38,38 +38,36 @@ public class CompositeFile extends BaseFile {
 			xPath = XPathFactory.newInstance().newXPath()
 			xPath.setNamespaceContext(new NSC())
 
-//			def nodes = xPath.evaluate( '//sca:component/sca:implementation.bpel', bpel, XPathConstants.NODESET )
-//			nodes.each{
-//				def location = xPath.evaluate( '@src', it )
-//				def bf = BaseFile.create(filePath, location)
-//				if(bf) {
-//					//c.addEdge(self, bf.self)
-//					c.addProjectEdge(prjSelf, bf.prjSelf)
-//					bf.parseDependencies()
-//					println "sca import $location"
-//				}
-//			}
-//
-//			nodes = xPath.evaluate( '//sca:import', bpel, XPathConstants.NODESET )
-//			nodes.each{
-//				def location = xPath.evaluate( '@location', it )
-//				def bf = BaseFile.create(filePath, location)
-//				if(bf) {
-//					//c.addEdge(self, bf.self)
-//					c.addProjectEdge(prjSelf, bf.prjSelf)
-//					bf.parseDependencies()
-//					println "sca import $location"
-//				}
-//			}
+			def nodes = xPath.evaluate( '//sca:component/sca:implementation.bpel', bpel, XPathConstants.NODESET )
+			nodes.each{
+				def location = xPath.evaluate( '@src', it )
+				def bf = BaseFile.create(filePath, location)
+				if(bf) {
+					prjCtlg.addProjectEdge(self, bf.self)
+					bf.parseDependencies()
+					println "sca import $location"
+				}
+			}
 
-			def nodes = xPath.evaluate( '/sca:composite/sca:service', bpel, XPathConstants.NODESET )
+			nodes = xPath.evaluate( '//sca:import', bpel, XPathConstants.NODESET )
+			nodes.each{
+				def location = xPath.evaluate( '@location', it )
+				def bf = BaseFile.create(filePath, location)
+				if(bf) {
+					prjCtlg.addProjectEdge(self, bf.self)
+					bf.parseDependencies()
+					println "sca import $location"
+				}
+			}
+
+			nodes = xPath.evaluate( '/sca:composite/sca:service', bpel, XPathConstants.NODESET )
 			nodes.each{
 				def iface = xPath.evaluate( 'sca:interface.wsdl/@interface', it )
 				def port = xPath.evaluate( 'sca:binding.ws/@port', it )
 				def n = xPath.evaluate( '@name', it )
 
 				def s = new Service(iface: iface, port: port, name: n, compositeFile: this)
-				c.addService(s)
+				svcCtlg.addService(s)
 				println "Service $iface $port"
 			}
 
@@ -80,7 +78,7 @@ public class CompositeFile extends BaseFile {
 				def n = xPath.evaluate( '@name', it )
 
 				def r = new Reference(iface: iface, port: port, name: n, compositeFile: this)
-				c.addReference(r)
+				svcCtlg.addReference(r)
 				println "Reference $iface $port"
 			}
 		} finally {
