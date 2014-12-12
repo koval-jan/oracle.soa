@@ -15,7 +15,7 @@ class MDSScanner {
 	
 	static main(args) {
 
-		def cli = new CliBuilder(usage: 'MDSScanner -opmx[dl]')
+		def cli = new CliBuilder(usage: 'oracle.soa.scanner -opmx[dl]')
 		cli.with {
 			h longOpt: 'help', 'Show usage information'
 			p longOpt: 'projectdir', args: 1, argName: 'dir',  'Path to project dirs to scan recursively'

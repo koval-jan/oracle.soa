@@ -97,6 +97,8 @@
 				<executions>
 					<execution>
 						<configuration>
+							
+							<filename>${project.artifactId}.jar</filename>
 							<mainClass>com.gratex.mds.MDSScanner</mainClass>
 							<!-- Optional, default is false -->
 							<attachToBuild>true</attachToBuild>
