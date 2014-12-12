@@ -4,8 +4,9 @@
 
 	<parent>
 		<groupId>com.gratex.maven</groupId>
-		<artifactId>master-parent-groovy</artifactId>
-		<version>1.0.5</version>
+		<artifactId>parent</artifactId>
+		<version>1.0.0</version>
+		<relativePath>../master</relativePath>
 	</parent>
 
 	<groupId>com.gratex</groupId>
@@ -78,26 +79,37 @@
 			<artifactId>java-graphviz</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
-
+		
 		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-aspects</artifactId>
-			<version>3.2.7.RELEASE</version>
-			<scope>none</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.aspectj</groupId>
-			<artifactId>aspectjrt</artifactId>
-			<version>1.7.3</version>
-			<scope>none</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.aspectj</groupId>
-			<artifactId>aspectjtools</artifactId>
-			<version>1.7.3z</version>
-			<scope>none</scope>
+			<groupId>commons-cli</groupId>
+			<artifactId>commons-cli</artifactId>
+			<version>1.2</version>
 		</dependency>
 
 	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.dstovall</groupId>
+				<artifactId>onejar-maven-plugin</artifactId>
+				<version>1.4.4</version>
+				<executions>
+					<execution>
+						<configuration>
+							<mainClass>com.gratex.mds.MDSScanner</mainClass>
+							<!-- Optional, default is false -->
+							<attachToBuild>true</attachToBuild>
+							<!-- Optional, default is "onejar" -->
+							<classifier>onejar</classifier>
+						</configuration>
+						<goals>
+							<goal>one-jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>

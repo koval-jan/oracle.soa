@@ -86,12 +86,10 @@ class CompiletimeCatalog {
 	
 	@ActiveMethod(blocking=true)
 	public Set subTree(String name) {
-		println name
 		def results = new LinkedHashSet()
 		def r = []
 		def p = projectIdx[["projectLogicalname": name.toString()]]
 		if(p) {
-			//println p.toList()
 			p.as('x').sideEffect{ results << it.getProperty('projectName')}.out.simplePath.loop('x'){it.loops < 5}{true}.dedup.fill(r);
 			results.addAll(r.collect { it.getProperty('projectName') })
 		}

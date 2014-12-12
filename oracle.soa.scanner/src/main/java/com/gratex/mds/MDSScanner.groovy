@@ -11,8 +11,84 @@ import com.gratex.mds.file.BaseFile
 
 class MDSScanner {
 
+	static def printErr = System.err.&println
+	
 	static main(args) {
 
+		def cli = new CliBuilder(usage: 'MDSScanner -opmx[dl]')
+		cli.with {
+			h longOpt: 'help', 'Show usage information'
+			p longOpt: 'projectdir', args: 1, argName: 'dir',  'Path to project dirs to scan recursively'
+			o longOpt: 'out', args: 1, argName: 'dir',  'Path to output direcotry'
+			m longOpt: 'mds', args: 1, argName: 'dir',  'Path to root of mds direcotry'
+			x longOpt: 'mdsXml', args: 1, argName: 'file',  'Path to mds ip xml file'
+			d longOpt: 'deps', args: 1, argName: 'name',  'List all transitive runtime and compiletime dependencies for defined project name'
+			l longOpt: 'listprojects', 'List all project names'
+		}
+
+		def options = cli.parse(args)
+		if (!options) {
+			return
+		}
+		// Show usage text when -h or --help option is used.
+		if (options.h) {
+			cli.usage()
+			return
+		}
+		
+		if(!options.o){
+			System.err.println("Specify output dir")
+			cli.usage()
+			System.exit(1)
+			return
+		}
+		def outputdir = new File(options.o)
+		if(!outputdir.exists()){
+			printErr("Output dir ${outputdir.toString()} does not exist")
+			System.exit(1)
+		}
+		
+		if(!options.p){
+			printErr("Specify project dir")
+			cli.usage()
+			System.exit(1)
+			return
+		}
+		def projectdir = new File(options.p)
+		if(!projectdir.exists()){
+			printErr("Project dir ${projectdir.toString()} does not exist")
+			System.exit(1)
+		}
+		
+		if(!options.m){
+			printErr("Specify mds dir")
+			cli.usage()
+			System.exit(1)
+			return
+		}
+		def mdsdir = new File(options.m)
+		if(!mdsdir.exists()){
+			printErr("Mds dir ${mdsdir.toString()} does not exist")
+			System.exit(1)
+		}
+		
+		if(!options.x){
+			printErr("Specify mds ip xml file")
+			cli.usage()
+			System.exit(1)
+			return
+		}
+		def mdsIpXmlFile = new File(options.x)
+		if(!mdsIpXmlFile.exists()){
+			printErr("Mds ip xml file ${mdsIpXmlFile.toString()} does not exist")
+			System.exit(1)
+		}
+		AllMds.getInstance(mdsdir, mdsIpXmlFile)
+		
+		def listProjects = options.l
+		def projectDeps = options.d
+		
+		
 		def svcActorPG = new DefaultPGroup(1)  //1 daemon thread pool
 		ActiveObjectRegistry.instance.register("svcActorGroup", svcActorPG)
 		def prjActorPG = new DefaultPGroup(1)  //1 daemon thread pool
@@ -25,7 +101,7 @@ class MDSScanner {
 			runtimeCtl = RuntimeCatalog.instance
 			compiletimeCtl = CompiletimeCatalog.instance
 
-			new File("c:/Workspaces/MVSR/EGOV").eachFileRecurse(FileType.FILES) {
+			projectdir.eachFileRecurse(FileType.FILES) {
 				if( it.name  ==~ ".*composite.xml") {
 					try {
 						def bf = BaseFile.create(it.toURI().toString())
@@ -38,20 +114,20 @@ class MDSScanner {
 
 			runtimeCtl.postprocessReferences()
 			
-			compiletimeCtl.saveGraphML('c:/compileTimeDependencies.graphml')
-			//compiletimeCtl.saveGraphwiz('c:/compileTimeDependencies.png')
+			compiletimeCtl.saveGraphML(new File(outputdir,'compileTimeDependencies.graphml').toString())
+			compiletimeCtl.saveGraphwiz(new File(outputdir,'compileTimeDependencies.png').toString())
 			
 
-			runtimeCtl.saveGraphML('c:/runtimeDependencies.graphml')
-			runtimeCtl.saveGML('c:/runtimeDependencies.gml')
+			runtimeCtl.saveGraphML(new File(outputdir,'runtimeDependencies.graphml').toString())
+			runtimeCtl.saveGML(new File(outputdir,'runtimeDependencies.gml').toString())
 
 			def sgArr = runtimeCtl.getNeigbourSubGraphs() 
 			sgArr.each { k,v ->
 				if(v.vertices.isEmpty())
 					return
 				def gw = new GraphvizWriter(v)
-				gw.outputGraph("c:/runtime_${k}.png")
-				v.saveGraphML("c:/runtime_${k}.graphml")
+				gw.outputGraph(new File(outputdir,"runtime_${k}.png").toString())
+				v.saveGraphML(new File(outputdir,"runtime_${k}.graphml").toString())
 			}
 			
 			
@@ -60,31 +136,38 @@ class MDSScanner {
 				if(v.vertices.isEmpty())
 					return
 				def gw = new GraphvizWriter(v)
-				gw.outputGraph("c:/compiletime_${k}.png")
-				v.saveGraphML("c:/compiletime_${k}.graphml")
+				gw.outputGraph(new File(outputdir,"compiletime_${k}.png").toString())
+				v.saveGraphML(new File(outputdir,"compiletime_${k}.graphml").toString())
 			}
 			
-			println "*******"
-			//def prfj="GTI.MINIPAY"
-			//def prfj="UPVS.MVMEP"
-			//def prfj="CO.ZEP.UI"
-			def prfj="CO.SYN.MINIK"
-			def set = runtimeCtl.subTree(prfj)
-			println set
-			Set all = new LinkedHashSet()
-			set.each{
-				all.add(it)
-				all.addAll(compiletimeCtl.subTree(it))
+			if(listProjects) {
+				println "******* RUNTIME/COMPILETIME PROJECT LIST ******"
+				println "not implemented"
 			}
-			println all
 			
-//			println runtimeCtl.subTree("UPVS.MVG2G")
-//			println runtimeCtl.subTree("CO.SYN.MINIK")
-//			println runtimeCtl.subTree("UPVS.MVMEP")
-			
+			if(projectDeps) {
+				println "******* RUNTIME/COMPILETIME DEPENDENCIES FOR PROJECT: ${projectDeps} ******"
+				//def prfj="GTI.MINIPAY"
+				//def prfj="UPVS.MVMEP"
+				//def prfj="CO.ZEP.UI"
+				//def prfj="CO.SYN.MINIK"
+				def set = runtimeCtl.subTree(projectDeps)
+
+				Set all = new LinkedHashSet()
+				set.each{
+					all.add(it)
+					all.addAll(compiletimeCtl.subTree(it))
+				}
+				// print located projects
+				all.each {
+					println it
+				}
+			}
+	
 			runtimeCtl.commit()
+			compiletimeCtl.commit()
 		} catch (e) {
-			println e
+			printErr(e)
 			runtimeCtl?.rollback()
 			compiletimeCtl?.rollback()
 		} finally {
@@ -92,79 +175,6 @@ class MDSScanner {
 			compiletimeCtl?.shutdown()
 		}
 
-//		def OServer server
-//		def OrientGraph g
-//		try {
-//			server = OServerMain.create()
-//			server.startup(MDSScanner.class.getResourceAsStream("/db.cfg.xml"))
-//			//server.openDatabase("graph", "plocal:c:/temp/orientdb/test", "root", "ThisIsA_TEST")
-//
-////			OrientGraphFactory factory = new OrientGraphFactory("plocal:C:/temp/orientdb/test").setupPool(1,10)
-////			graph = factory.getTx()
-////			graph.drop();
-//			Gremlin.load()
-//			OGremlinHelper.global().create()
-//			OrientGraphFactory factory = new OrientGraphFactory("memory:test").setupPool(1,10)
-//			g = factory.getTx()
-//			def fielNameIdx = g.createIndex("fileNameIdx",  Vertex.class)
-//
-//			Vertex f1 = g.addVertex(1, [name:'1', fileName: 'file1', project: 'A'])
-//			fielNameIdx.put("fileName", 'file1', f1)
-//
-//			Vertex f2 = g.addVertex(name: '2', fileName: "file2", project: "A" )
-//			fielNameIdx.put("fileName", 'file2', f2)
-//
-//			Vertex f3 = g.addVertex(name: '3', fileName: "file3", project: "A" )
-//			fielNameIdx.put("fileName", 'file3', f3)
-//
-//			Vertex f4 = g.addVertex(name: '4', fileName: "file4", project: "B" )
-//			fielNameIdx.put("fileName", 'file4', f4)
-//
-//			Vertex f5 = g.addVertex(name: '5', fileName: "file5", project: "C" )
-//			fielNameIdx.put("fileName", 'file5', f5)
-//
-//			/*
-//			 *       5---
-//			 *       ^    \
-//			 *       |    |
-//			 *       |    V
-//			 * 	1 -> 2 -> 3
-//			 *       ^
-//			 *       |
-//			 *       4
-//			 *
-//			 */
-//
-//			Edge e1 = g.addEdge(null, f1, f2, "depends")
-//			Edge e2 = g.addEdge(null, f2, f3, "depends")
-//			Edge e3 = g.addEdge(null, f2, f5, "depends")
-//			Edge e4 = g.addEdge(null, f5, f3, "depends")
-//			Edge e5 = g.addEdge(null, f4, f2, "depends")
-//			g.commit()
-//			//g.saveGraphML('c:/test.graphml')
-//			//println g
-//
-//			def results = []
-////			g.V('fileName', 'file1').as('x').out.simplePath.loop('x'){ i ->
-////				i.loops < 3
-////			}.fill(results);
-////			results.each {
-////				println it.fileName
-////			}
-//
-//			fielNameIdx[[fileName: 'file1']].as('x').out.simplePath.loop('x'){it.loops < 10}{true}.dedup.fill(results);
-//			results.each {
-//				println it.fileName
-//			}
-//			//.out.simplePath.loop(2){it.loops < 2000}.path
-//
-//
-//
-//
-//		} finally {
-//			g?.rollback();
-//			server?.shutdown();
-//		}
 	}
 
 }
