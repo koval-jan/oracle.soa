@@ -1,0 +1,17 @@
+<?xml version= '1.0' encoding= 'UTF-8' ?>
+<wsdl:definitions
+     name="Process2"
+     targetNamespace="http://xmlns.oracle.com/Sample/ProjectY/Process2"
+     xmlns:ns1="http://xmlns.oracle.com/Sample/Logging"
+     xmlns:plnk="http://schemas.xmlsoap.org/ws/2003/05/partner-link/"
+     xmlns:client="http://xmlns.oracle.com/Sample/ProjectY/Process2"
+     xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+    >
+    <wsdl:types>
+        <schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://xmlns.oracle.com/Sample/ProjectY/Process2"
+             xmlns="http://www.w3.org/2001/XMLSchema"/>
+        <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <xsd:import namespace="http://xmlns.oracle.com/Sample/Logging" schemaLocation="oramds:/apps/SOA/log.xsd"/>
+        </xsd:schema>
+    </wsdl:types>
+</wsdl:definitions>

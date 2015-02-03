@@ -12,7 +12,7 @@ import com.gratex.mds.file.BaseFile
 class MDSScanner {
 
 	static def printErr = System.err.&println
-	
+
 	static main(args) {
 
 		def cli = new CliBuilder(usage: 'oracle.soa.scanner -opmx[dl]')
@@ -35,7 +35,7 @@ class MDSScanner {
 			cli.usage()
 			return
 		}
-		
+
 		if(!options.o){
 			System.err.println("Specify output dir")
 			cli.usage()
@@ -44,10 +44,12 @@ class MDSScanner {
 		}
 		def outputdir = new File(options.o)
 		if(!outputdir.exists()){
-			printErr("Output dir ${outputdir.toString()} does not exist")
-			System.exit(1)
+			if(!outputdir.mkdirs()) {
+				printErr("Unable to create output dir ${outputdir.toString()}")
+				System.exit(1)
+			}
 		}
-		
+
 		if(!options.p){
 			printErr("Specify project dir")
 			cli.usage()
@@ -59,7 +61,7 @@ class MDSScanner {
 			printErr("Project dir ${projectdir.toString()} does not exist")
 			System.exit(1)
 		}
-		
+
 		if(!options.m){
 			printErr("Specify mds dir")
 			cli.usage()
@@ -71,30 +73,27 @@ class MDSScanner {
 			printErr("Mds dir ${mdsdir.toString()} does not exist")
 			System.exit(1)
 		}
-		
-		if(!options.x){
-			printErr("Specify mds ip xml file")
-			cli.usage()
-			System.exit(1)
-			return
-		}
-		def mdsIpXmlFile = new File(options.x)
-		if(!mdsIpXmlFile.exists()){
-			printErr("Mds ip xml file ${mdsIpXmlFile.toString()} does not exist")
-			System.exit(1)
+
+		def mdsIpXmlFile
+		if(options.x){
+			mdsIpXmlFile = new File(options.x)
+			if(!mdsIpXmlFile.exists()){
+				printErr("Mds ip xml file ${mdsIpXmlFile.toString()} does not exist")
+				System.exit(1)
+			}
 		}
 		AllMds.getInstance(mdsdir, mdsIpXmlFile)
-		
+
 		def listProjects = options.l
 		def projectDeps = options.d
-		
-		
+
+
 		def svcActorPG = new DefaultPGroup(1)  //1 daemon thread pool
 		ActiveObjectRegistry.instance.register("svcActorGroup", svcActorPG)
 		def prjActorPG = new DefaultPGroup(1)  //1 daemon thread pool
 		ActiveObjectRegistry.instance.register("prjActorGroup", prjActorPG)
-		
-		
+
+
 		def RuntimeCatalog runtimeCtl
 		def CompiletimeCatalog compiletimeCtl
 		try {
@@ -113,15 +112,15 @@ class MDSScanner {
 			}
 
 			runtimeCtl.postprocessReferences()
-			
+
 			compiletimeCtl.saveGraphML(new File(outputdir,'compileTimeDependencies.graphml').toString())
 			compiletimeCtl.saveGraphwiz(new File(outputdir,'compileTimeDependencies.png').toString())
-			
+
 
 			runtimeCtl.saveGraphML(new File(outputdir,'runtimeDependencies.graphml').toString())
 			runtimeCtl.saveGML(new File(outputdir,'runtimeDependencies.gml').toString())
 
-			def sgArr = runtimeCtl.getNeigbourSubGraphs() 
+			def sgArr = runtimeCtl.getNeigbourSubGraphs()
 			sgArr.each { k,v ->
 				if(v.vertices.isEmpty())
 					return
@@ -129,8 +128,8 @@ class MDSScanner {
 				gw.outputGraph(new File(outputdir,"runtime_${k}.png").toString())
 				v.saveGraphML(new File(outputdir,"runtime_${k}.graphml").toString())
 			}
-			
-			
+
+
 			sgArr = compiletimeCtl.getNeigbourSubGraphs()
 			sgArr.each { k,v ->
 				if(v.vertices.isEmpty())
@@ -139,12 +138,12 @@ class MDSScanner {
 				gw.outputGraph(new File(outputdir,"compiletime_${k}.png").toString())
 				v.saveGraphML(new File(outputdir,"compiletime_${k}.graphml").toString())
 			}
-			
+
 			if(listProjects) {
 				println "******* RUNTIME/COMPILETIME PROJECT LIST ******"
 				println "not implemented"
 			}
-			
+
 			if(projectDeps) {
 				println "******* RUNTIME/COMPILETIME DEPENDENCIES FOR PROJECT: ${projectDeps} ******"
 				//def prfj="GTI.MINIPAY"
@@ -163,7 +162,7 @@ class MDSScanner {
 					println it
 				}
 			}
-	
+
 			runtimeCtl.commit()
 			compiletimeCtl.commit()
 		} catch (e) {

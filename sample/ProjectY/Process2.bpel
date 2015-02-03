@@ -1,0 +1,81 @@
+<?xml version = "1.0" encoding = "UTF-8" ?>
+<!--
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  Oracle JDeveloper BPEL Designer 
+  
+  Created: Tue Feb 03 12:53:22 CET 2015
+  Author:  jkoval
+  Type: BPEL 1.1 Process
+  Purpose: Asynchronous BPEL Process
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+-->
+<process name="Process2"
+         targetNamespace="http://xmlns.oracle.com/Sample/ProjectY/Process2"
+         xmlns="http://schemas.xmlsoap.org/ws/2003/03/business-process/"
+         xmlns:client="http://xmlns.oracle.com/Sample/ProjectY/Process2"
+         xmlns:ora="http://schemas.oracle.com/xpath/extension"
+         xmlns:bpelx="http://schemas.oracle.com/bpel/extension"
+         xmlns:bpws="http://schemas.xmlsoap.org/ws/2003/03/business-process/"
+         xmlns:ns1="http://xmlns.oracle.com/Sample/ProjectZ/Process3"
+         xmlns:bpel2="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:ns2="http://xmlns.oracle.com/Sample/Logging">
+
+    <!-- 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        PARTNERLINKS                                                      
+        List of services participating in this BPEL process               
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    --> 
+    <partnerLinks>
+        <!-- 
+      The 'client' role represents the requester of this service. It is 
+      used for callback. The location and correlation information associated
+      with the client role are automatically set using WS-Addressing.
+    -->
+        <partnerLink name="process2_service" partnerLinkType="client:Process2" myRole="Process2Provider" partnerRole="Process2Requester"/>
+        <partnerLink name="Service1" partnerLinkType="ns1:Process3"
+                     partnerRole="Process3Provider" myRole="Process3Requester"/>
+    </partnerLinks>
+
+    <!-- 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        VARIABLES                                                        
+        List of messages and XML documents used within this BPEL process 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    -->
+    <variables>
+        <!-- Reference to the message passed as input during initiation -->
+        <variable name="inputVariable" messageType="client:Process2RequestMessage"/>
+
+        <!-- Reference to the message that will be sent back to the requester during callback -->
+        <variable name="outputVariable" messageType="client:Process2ResponseMessage"/>
+        <variable name="Invoke1_process_InputVariable"
+                  messageType="ns1:Process3RequestMessage"/>
+        <variable name="Receive1_processResponse_InputVariable"
+                  messageType="ns1:Process3ResponseMessage"/>
+        <variable name="log" element="ns2:log"/>
+    </variables>
+
+    <!-- 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+       ORCHESTRATION LOGIC                                               
+       Set of activities coordinating the flow of messages across the    
+       services integrated within this business process                  
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    -->
+    <sequence name="main">
+        <!-- Receive input from requestor. (Note: This maps to operation defined in Process2.wsdl) -->
+        <receive name="receiveInput" partnerLink="process2_service" portType="client:Process2" operation="process" variable="inputVariable" createInstance="yes"/>
+        <invoke name="Invoke1"
+                partnerLink="Service1" portType="ns1:Process3"
+                operation="process" bpelx:invokeAsDetail="no"
+                inputVariable="Invoke1_process_InputVariable"/>
+        <receive name="Receive1" createInstance="no" partnerLink="Service1"
+                 portType="ns1:Process3Callback" operation="processResponse"
+                 variable="Receive1_processResponse_InputVariable"/>
+        <!-- 
+          Asynchronous callback to the requester. (Note: the callback location and correlation id is transparently handled using WS-addressing.)
+        -->
+        <invoke name="callbackClient" partnerLink="process2_service" portType="client:Process2Callback" operation="processResponse" inputVariable="outputVariable"/>
+    </sequence>
+</process>
